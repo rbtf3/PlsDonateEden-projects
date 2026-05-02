@@ -429,11 +429,6 @@ function displayProjects() {
       `;
     });
 
-    if (checkIfCompleted(project)) {
-  project.status = "closed";
-  localStorage.setItem("projects", JSON.stringify(projects));
-}
-
     div.innerHTML = `
     <h3>${project.title}</h3>
 <p>${project.description}</p>
@@ -462,9 +457,7 @@ ${itemsHTML}
 <div class="autocomplete-wrapper">
   <input id="item-${index}"
        placeholder="Search item..."
-       oninput="validateDonation(${index}); debounceDonation(${index})"
-       autocomplete="off">
-
+oninput="validateDonation(${index}); debounceDonation(${index})"
   <div id="donation-suggestions-${index}" class="suggestions-box"></div>
 </div>
 
@@ -505,10 +498,11 @@ function showMaterialSuggestions(index) {
     div.textContent = block;
 
     div.onmousedown = (e) => {
-      e.preventDefault();
-      input.value = block;
-      box.innerHTML = "";
-    };
+  e.preventDefault();
+  input.value = block;
+  box.innerHTML = "";
+  validateDonation(index);
+};
 
     box.appendChild(div);
   });
@@ -541,6 +535,11 @@ function addMaterial(index) {
     alert("That material already exists!");
     return;
   }
+
+if (checkIfCompleted(project)) {
+  project.status = "closed";
+  localStorage.setItem("projects", JSON.stringify(projects));
+}
 
   project.items.push({
     name,
@@ -596,13 +595,11 @@ function showDonationSuggestions(index) {
 }
 
 function debounceDonation(index) {
-  // cancel previous timer if user keeps typing
   clearTimeout(donationTimers[index]);
 
-  // set new timer
   donationTimers[index] = setTimeout(() => {
     showDonationSuggestions(index);
-  }, 100); // delay in milliseconds
+  }, 80);
 }
 
 function checkIfCompleted(project) {
@@ -612,8 +609,7 @@ function checkIfCompleted(project) {
 }
 
 document.addEventListener("click", function (e) {
-  const isInput = e.target.closest("input");
-  const isSuggestion = e.target.closest(".suggestions-box");
+const isInput = e.target.closest("input, textarea");  const isSuggestion = e.target.closest(".suggestions-box");
 
   if (!isInput && !isSuggestion) {
     document.querySelectorAll(".suggestions-box").forEach(box => {
