@@ -1,0 +1,549 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minecraft Projects</title>
+  <style>
+  body {
+    font-family: Arial;
+    background: #1e1e1e;
+    color: white;
+    padding: 20px;
+  }
+
+  .project {
+    background: #2c2c2c;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    position: relative;
+  }
+
+  input, textarea {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+
+  button {
+    padding: 8px 12px;
+    background: #4CAF50;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #777;
+    cursor: not-allowed;
+  }
+
+  .autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
+  background: #333;
+  max-height: 180px;
+  overflow-y: auto;
+
+  border: 1px solid #444;
+  z-index: 9999;
+  box-sizing: border-box;
+}
+
+.suggestions-box div {
+  padding: 6px;
+  cursor: pointer;
+}
+
+.suggestions-box div:hover {
+  background: #555;
+}
+</style>
+
+</head>
+
+<body>
+
+  <h1>Minecraft Projects</h1>
+
+  <h2>Create a Project</h2>
+
+<input id="title" placeholder="Project Title">
+<textarea id="description" placeholder="Project Description"></textarea>
+
+
+<button onclick="addProject()">New Project</button>
+  <h2>Projects</h2>
+  <div id="projectList"></div>
+
+  <script>
+
+let projects = JSON.parse(localStorage.getItem("projects")) || [];
+
+const minecraftBlocks = [
+  "Stone",
+  "Cobblestone",
+  "Mossy Cobblestone",
+  "Granite",
+  "Diorite",
+  "Andesite",
+  "Deepslate",
+  "Cobbled Deepslate",
+  "Tuff",
+  "Calcite",
+  "Dripstone Block",
+  "Clay",
+  "Dirt",
+  "Coarse Dirt",
+  "Rooted Dirt",
+  "Grass Block",
+  "Sand",
+  "Red Sand",
+  "Gravel",
+  "Snow Block",
+  "Ice",
+  "Packed Ice",
+  "Blue Ice",
+  "Obsidian",
+  "Crying Obsidian",
+  "Netherrack",
+  "Soul Sand",
+  "Soul Soil",
+  "End Stone",
+  "Glowstone",
+  "Oak Log",
+  "Spruce Log",
+  "Birch Log",
+  "Jungle Log",
+  "Acacia Log",
+  "Dark Oak Log",
+  "Mangrove Log",
+  "Cherry Log",
+  "Stripped Logs",
+  "Oak Planks",
+  "Spruce Planks",
+  "Birch Planks",
+  "Jungle Planks",
+  "Acacia Planks",
+  "Dark Oak Planks",
+  "Mangrove Planks",
+  "Cherry Planks",
+  "Bamboo Planks",
+  "Bamboo Block",
+  "Leaves",
+  "Vines",
+  "Lily Pad",
+  "Moss Block",
+  "Hanging Roots",
+  "Glow Lichen",
+  "Bricks",
+  "Stone Bricks",
+  "Mossy Stone Bricks",
+  "Cracked Stone Bricks",
+  "Chiseled Stone Bricks",
+  "Polished Granite",
+  "Polished Diorite",
+  "Polished Andesite",
+  "Polished Deepslate",
+  "Deepslate Bricks",
+  "Cracked Deepslate Bricks",
+  "Deepslate Tiles",
+  "Cracked Deepslate Tiles",
+  "Quartz Block",
+  "Quartz Pillar",
+  "Chiseled Quartz Block",
+  "Smooth Quartz",
+  "Glass",
+  "Glass Pane",
+  "Tinted Glass",
+  "Terracotta",
+  "White Terracotta",
+  "Colored Terracotta",
+  "Concrete",
+  "Concrete Powder",
+  "Wool",
+  "Carpet",
+  "Coal Block",
+  "Iron Block",
+  "Gold Block",
+  "Diamond Block",
+  "Emerald Block",
+  "Lapis Block",
+  "Redstone Block",
+  "Copper Block",
+  "Cut Copper",
+  "Waxed Copper",
+  "Ancient Debris",
+  "Crafting Table",
+  "Furnace",
+  "Blast Furnace",
+  "Smoker",
+  "Anvil",
+  "Enchanting Table",
+  "Enchanting Bookshelf",
+  "Chests",
+  "Barrel",
+  "Shulker Box",
+  "Beacon",
+  "Hopper",
+  "Dispenser",
+  "Dropper",
+  "Note Block",
+  "Jukebox",
+  "Lectern",
+  "Cartography Table",
+  "Fletching Table",
+  "Smithing Table",
+  "Grindstone",
+  "Stonecutter",
+  "Composter",
+  "Redstone Dust",
+  "Redstone Torch",
+  "Lever",
+  "Button",
+  "Pressure Plate",
+  "Repeater",
+  "Comparator",
+  "Observer",
+  "Piston",
+  "Sticky Piston",
+  "Torch",
+  "Lantern",
+  "Soul Lantern",
+  "Sea Lantern",
+  "Campfire",
+  "Soul Campfire",
+  "Farmland",
+  "Wheat",
+  "Carrots",
+  "Potatoes",
+  "Beetroots",
+  "Pumpkin",
+  "Melon",
+  "Sugar Cane",
+  "Cactus",
+  "Bamboo",
+  "Sweet Berry Bush",
+  "Nether Bricks",
+  "Red Nether Bricks",
+  "Nether Wart Block",
+  "Warped Stem",
+  "Crimson Stem",
+  "Shroomlight",
+  "Blackstone",
+  "Basalt",
+  "Polished Basalt",
+  "Purpur Block",
+  "Purpur Pillar",
+  "End Stone Bricks",
+  "Beds",
+  "Doors",
+  "Trapdoors",
+  "Fences",
+  "Fence Gates",
+  "Signs",
+  "Chains",
+  "Ladders",
+  "Rails",
+  "Powered Rails",
+  "Activator Rails",
+  "Detector Rails"
+];
+
+// FIX OLD DATA (IMPORTANT)
+projects = projects.map(p => ({
+  title: p.title,
+  description: p.description,
+  items: p.items || [],
+  donationRequests: p.donationRequests || []
+}));
+
+displayProjects();
+
+
+  function addProject() {
+  const title = document.getElementById("title").value.trim();
+  const description = document.getElementById("description").value.trim();
+
+  if (!title || !description) {
+    alert("Fill out project info!");
+    return;
+  }
+
+  const project = {
+    title,
+    description,
+    items: [],
+    donationRequests: []
+  };
+
+  projects.push(project);
+  localStorage.setItem("projects", JSON.stringify(projects));
+
+  document.getElementById("title").value = "";
+  document.getElementById("description").value = "";
+
+  displayProjects();
+}
+
+
+function approveDonation(projectIndex, donationIndex) {
+  const project = projects[projectIndex];
+  const donation = project.donationRequests[donationIndex];
+
+  const item = project.items[donation.itemIndex];
+  if (!item) return;
+
+  const remaining = item.needed - item.donated;
+
+  if (donation.amount > remaining) {
+    alert("Not enough remaining to approve this donation!");
+    return;
+  }
+
+  item.donated += donation.amount;
+  donation.status = "approved";
+
+  localStorage.setItem("projects", JSON.stringify(projects));
+  displayProjects();
+
+  alert("Donation approved and applied!");
+}
+
+function submitDonation(index) {
+  const project = projects[index];
+
+  const itemName = document.getElementById(`item-${index}`).value.trim();
+  const amount = parseInt(document.getElementById(`amount-${index}`).value);
+
+  const item = project.items.find(
+    i => i.name.toLowerCase() === itemName.toLowerCase()
+  );
+
+  if (!item) return;
+
+  const remaining = item.needed - item.donated;
+
+  if (amount > remaining) return;
+
+  if (!project.donationRequests) {
+    project.donationRequests = [];
+  }
+
+  project.donationRequests.push({
+    item: item.name,
+    amount: amount,
+    itemIndex: project.items.indexOf(item),
+    status: "pending"
+  });
+
+  localStorage.setItem("projects", JSON.stringify(projects));
+  displayProjects();
+}
+
+function validateDonation(index) {
+  const project = projects[index];
+
+  const itemInput = document.getElementById(`item-${index}`);
+  const amountInput = document.getElementById(`amount-${index}`);
+  const btn = document.getElementById(`donateBtn-${index}`);
+
+  const itemName = itemInput.value.trim().toLowerCase();
+  const amount = parseInt(amountInput.value);
+
+  // 🚫 If project has NO required items → disable immediately
+  if (!project.items || project.items.length === 0) {
+    btn.disabled = true;
+    return;
+  }
+
+  const item = project.items.find(i => i.name.toLowerCase() === itemName);
+
+  // 🚫 Invalid item or amount
+  if (!item || isNaN(amount) || amount <= 0) {
+    btn.disabled = true;
+    return;
+  }
+
+  const remaining = item.needed - item.donated;
+
+  // 🚫 Too much donation
+  btn.disabled = amount > remaining;
+}
+
+function displayProjects() {
+  console.log("STEP 4 WORKS");
+
+  const list = document.getElementById("projectList");
+  list.innerHTML = "";
+
+  projects.forEach((project, index) => {
+    const div = document.createElement("div");
+    div.className = "project";
+
+    let itemsHTML = "";
+    let donationHTML = "";
+
+    // donations
+    if (project.donationRequests && project.donationRequests.length > 0) {
+      project.donationRequests.forEach((d, i) => {
+        donationHTML += `
+          <p>
+            ${d.amount} ${d.item} - ${d.status}
+            ${d.status === "pending"
+              ? `<button onclick="approveDonation(${index}, ${i})">Approve</button>`
+              : ""}
+          </p>
+        `;
+      });
+    }
+
+    // items
+    project.items.forEach(item => {
+      const percent = item.needed > 0
+        ? Math.min(100, Math.round((item.donated / item.needed) * 100))
+        : 0;
+
+      itemsHTML += `
+        <div style="margin-bottom:8px;">
+          <p style="margin:0;">
+            ${item.name}: ${item.donated}/${item.needed} (${percent}%)
+          </p>
+
+          <div style="background:#444; width:100%; height:10px; border-radius:5px; overflow:hidden;">
+            <div style="width:${percent}%; height:100%; background:#4CAF50;"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    div.innerHTML = `
+    <h3>${project.title}</h3>
+<p>${project.description}</p>
+
+${itemsHTML}
+
+<h4>Add Materials</h4>
+
+<div class="autocomplete-wrapper">
+  <input id="material-${index}"
+         placeholder="Search item..."
+         oninput="showMaterialSuggestions(${index})"
+         autocomplete="off">
+
+  <div id="material-suggestions-${index}" class="suggestions-box"></div>
+</div>
+
+<input id="material-amount-${index}" placeholder="Amount needed">
+
+<button onclick="addMaterial(${index})">
+  Add Material
+</button>
+
+<h4>Donate Items</h4>
+
+<div class="autocomplete-wrapper">
+  <input id="item-${index}"
+         placeholder="Search item..."
+         oninput="validateDonation(${index}); showDonationSuggestions(${index})"
+         autocomplete="off">
+
+  <div id="donation-suggestions-${index}" class="suggestions-box"></div>
+</div>
+
+<input id="amount-${index}"
+       placeholder="Amount"
+       oninput="validateDonation(${index})">
+
+<button id="donateBtn-${index}" disabled onclick="submitDonation(${index})">
+  Donate
+</button>
+
+<h4>Donations</h4>
+${donationHTML}
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+
+function showMaterialSuggestions(index) {
+  const input = document.getElementById(`material-${index}`);
+  const box = document.getElementById(`material-suggestions-${index}`);
+
+  if (!input || !box) return;
+
+  const value = input.value.toLowerCase();
+  box.innerHTML = "";
+
+  if (!value) return;
+
+  const matches = minecraftBlocks
+    .filter(b => b.toLowerCase().includes(value))
+    .slice(0, 10);
+
+  matches.forEach(block => {
+    const div = document.createElement("div");
+    div.textContent = block;
+
+    div.onmousedown = (e) => {
+      e.preventDefault();
+      input.value = block;
+      box.innerHTML = "";
+    };
+
+    box.appendChild(div);
+  });
+}
+
+function addMaterial(index) {
+  const project = projects[index];
+
+  const nameInput = document.getElementById(`material-${index}`);
+  const amountInput = document.getElementById(`material-amount-${index}`);
+
+  if (!nameInput || !amountInput) {
+    alert("Material inputs not found");
+    return;
+  }
+
+  const name = nameInput.value.trim();
+  const amount = parseInt(amountInput.value);
+
+  if (!name || isNaN(amount) || amount <= 0) {
+    alert("Enter valid material and amount");
+    return;
+  }
+
+  const existing = project.items.find(
+    i => i.name.toLowerCase() === name.toLowerCase()
+  );
+
+  if (existing) {
+    alert("That material already exists!");
+    return;
+  }
+
+  project.items.push({
+    name,
+    needed: amount,
+    donated: 0
+  });
+
+  localStorage.setItem("projects", JSON.stringify(projects));
+  displayProjects();
+}
+
+  </script>
+</body>
+</html>
