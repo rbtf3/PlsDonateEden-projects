@@ -261,12 +261,12 @@ const minecraftBlocks = [
   "Detector Rails"
 ];
 
-// FIX OLD DATA (IMPORTANT)
 projects = projects.map(p => ({
   title: p.title,
   description: p.description,
   items: p.items || [],
-  donationRequests: p.donationRequests || []
+  donationRequests: p.donationRequests || [],
+  status: p.status || "open"
 }));
 
 requestAnimationFrame(displayProjects);
@@ -281,11 +281,12 @@ requestAnimationFrame(displayProjects);
   }
 
   const project = {
-    title,
-    description,
-    items: [],
-    donationRequests: []
-  };
+  title,
+  description,
+  items: [],
+  donationRequests: [],
+  status: "open" // NEW
+};
 
   projects.push(project);
   localStorage.setItem("projects", JSON.stringify(projects));
@@ -388,6 +389,7 @@ function displayProjects() {
   list.innerHTML = "";
 
   projects.forEach((project, index) => {
+    const isClosed = project.status === "closed";
     const div = document.createElement("div");
     div.className = "project";
 
@@ -426,6 +428,11 @@ function displayProjects() {
         </div>
       `;
     });
+
+    if (checkIfCompleted(project)) {
+  project.status = "closed";
+  localStorage.setItem("projects", JSON.stringify(projects));
+}
 
     div.innerHTML = `
     <h3>${project.title}</h3>
@@ -596,6 +603,12 @@ function debounceDonation(index) {
   donationTimers[index] = setTimeout(() => {
     showDonationSuggestions(index);
   }, 100); // delay in milliseconds
+}
+
+function checkIfCompleted(project) {
+  if (!project.items.length) return false;
+
+  return project.items.every(item => item.donated >= item.needed);
 }
 
 document.addEventListener("click", function (e) {
