@@ -315,6 +315,10 @@ function approveDonation(projectIndex, donationIndex) {
   item.donated += donation.amount;
   donation.status = "approved";
 
+  if (checkIfCompleted(project)) {
+    project.status = "closed";
+  }
+
   localStorage.setItem("projects", JSON.stringify(projects));
   displayProjects();
 
@@ -324,7 +328,7 @@ function approveDonation(projectIndex, donationIndex) {
 function submitDonation(index) {
   const project = projects[index];
 
-  const itemName = document.getElementById(`item-${index}`).value.trim();
+const itemName = document.getElementById(`donation-item-${index}`).value.trim();
   const amount = parseInt(document.getElementById(`amount-${index}`).value);
 
   const item = project.items.find(
@@ -355,14 +359,14 @@ function submitDonation(index) {
 function validateDonation(index) {
   const project = projects[index];
 
-  const itemInput = document.getElementById(`item-${index}`);
-  const amountInput = document.getElementById(`amount-${index}`);
+const itemInput = document.getElementById(`donation-item-${index}`);  const amountInput = document.getElementById(`amount-${index}`);
   const btn = document.getElementById(`donateBtn-${index}`);
+
+  if (!itemInput || !amountInput || !btn) return;
 
   const itemName = itemInput.value.trim().toLowerCase();
   const amount = parseInt(amountInput.value);
 
-  // 🚫 If project has NO required items → disable immediately
   if (!project.items || project.items.length === 0) {
     btn.disabled = true;
     return;
@@ -370,7 +374,6 @@ function validateDonation(index) {
 
   const item = project.items.find(i => i.name.toLowerCase() === itemName);
 
-  // 🚫 Invalid item or amount
   if (!item || isNaN(amount) || amount <= 0) {
     btn.disabled = true;
     return;
@@ -378,7 +381,6 @@ function validateDonation(index) {
 
   const remaining = item.needed - item.donated;
 
-  // 🚫 Too much donation
   btn.disabled = amount > remaining;
 }
 
@@ -389,6 +391,7 @@ function displayProjects() {
   list.innerHTML = "";
 
   projects.forEach((project, index) => {
+    updateProjectStatus(project);
     const isClosed = project.status === "closed";
     const div = document.createElement("div");
     div.className = "project";
@@ -438,26 +441,24 @@ ${itemsHTML}
 <h4>Add Materials</h4>
 
 <div class="autocomplete-wrapper">
-  <input id="material-${index}"
-         placeholder="Search item..."
-         oninput="showMaterialSuggestions(${index})"
-         autocomplete="off">
+<input id="material-item-${index}"
+       placeholder="Search item..."
+       oninput="showMaterialSuggestions(${index})"
+       autocomplete="off">
 
   <div id="material-suggestions-${index}" class="suggestions-box"></div>
 </div>
 
 <input id="material-amount-${index}" placeholder="Amount needed">
 
-<button onclick="addMaterial(${index})">
-  Add Material
-</button>
-
 <h4>Donate Items</h4>
 
 <div class="autocomplete-wrapper">
-  <input id="item-${index}"
+  <input id="donation-item-${index}"
        placeholder="Search item..."
-oninput="validateDonation(${index}); debounceDonation(${index})"
+       oninput="validateDonation(${index}); showDonationSuggestions(${index})"
+       autocomplete="off">
+
   <div id="donation-suggestions-${index}" class="suggestions-box"></div>
 </div>
 
@@ -471,6 +472,16 @@ oninput="validateDonation(${index}); debounceDonation(${index})"
 
 <h4>Donations</h4>
 ${donationHTML}
+
+<button onclick="deleteProject(${index})" style="background:red; margin-top:10px;">
+  Delete Project
+</button>
+
+${project.status === "closed"
+  ? `<button onclick="reopenProject(${index})" style="background:orange; margin-top:10px;">
+      Reopen Project
+    </button>`
+  : ""}
     `;
 
     list.appendChild(div);
@@ -479,7 +490,7 @@ ${donationHTML}
 
 
 function showMaterialSuggestions(index) {
-  const input = document.getElementById(`material-${index}`);
+const input = document.getElementById(`material-item-${index}`);
   const box = document.getElementById(`material-suggestions-${index}`);
 
   if (!input || !box) return;
@@ -514,18 +525,10 @@ function addMaterial(index) {
   const nameInput = document.getElementById(`material-${index}`);
   const amountInput = document.getElementById(`material-amount-${index}`);
 
-  if (!nameInput || !amountInput) {
-    alert("Material inputs not found");
-    return;
-  }
-
   const name = nameInput.value.trim();
   const amount = parseInt(amountInput.value);
 
-  if (!name || isNaN(amount) || amount <= 0) {
-    alert("Enter valid material and amount");
-    return;
-  }
+  if (!name || isNaN(amount) || amount <= 0) return;
 
   const existing = project.items.find(
     i => i.name.toLowerCase() === name.toLowerCase()
@@ -535,11 +538,6 @@ function addMaterial(index) {
     alert("That material already exists!");
     return;
   }
-
-if (checkIfCompleted(project)) {
-  project.status = "closed";
-  localStorage.setItem("projects", JSON.stringify(projects));
-}
 
   project.items.push({
     name,
@@ -552,39 +550,31 @@ if (checkIfCompleted(project)) {
 }
 
 function showDonationSuggestions(index) {
-  const input = document.getElementById(`item-${index}`);
+  const input = document.getElementById(`donation-item-${index}`);
   const box = document.getElementById(`donation-suggestions-${index}`);
   const project = projects[index];
 
   if (!input || !box || !project) return;
 
-  const value = input.value.toLowerCase();
+  const value = input.value.trim().toLowerCase();
   box.innerHTML = "";
 
-  // 🔥 Only items that still need donations
-  const availableItems = project.items.filter(
-    item => item.needed > item.donated
-  );
+  if (!value) return;
 
-  // 🔍 Filter based on typing
-  const matches = availableItems
-  .filter(item => item.name.toLowerCase().includes(value))
-  .sort((a, b) => (b.needed - b.donated) - (a.needed - a.donated));
+  const matches = project.items
+    .filter(item =>
+      item.name.toLowerCase().includes(value) &&
+      item.needed > item.donated
+    )
+    .slice(0, 10);
 
-  if (matches.length === 0) {
-    box.innerHTML = "<div style='padding:6px;color:#888;'>No matching materials</div>";
-    return;
-  }
-
-  matches.slice(0, 10).forEach(item => {
+  matches.forEach(item => {
     const div = document.createElement("div");
 
-    // 👇 Show remaining amount too (very helpful)
     const remaining = item.needed - item.donated;
     div.textContent = `${item.name} (${remaining} needed)`;
 
-    div.onmousedown = (e) => {
-      e.preventDefault();
+    div.onclick = () => {
       input.value = item.name;
       box.innerHTML = "";
       validateDonation(index);
@@ -607,6 +597,27 @@ function checkIfCompleted(project) {
 
   return project.items.every(item => item.donated >= item.needed);
 }
+
+function deleteProject(index) {
+  if (!confirm("Delete this project?")) return;
+
+  projects.splice(index, 1);
+  localStorage.setItem("projects", JSON.stringify(projects));
+  displayProjects();
+}
+
+function reopenProject(index) {
+  projects[index].status = "open";
+  localStorage.setItem("projects", JSON.stringify(projects));
+  displayProjects();
+}
+
+function updateProjectStatus(project) {
+  if (project.items.length && project.items.every(i => i.donated >= i.needed)) {
+    project.status = "closed";
+  }
+}
+
 
 document.addEventListener("click", function (e) {
 const isInput = e.target.closest("input, textarea");  const isSuggestion = e.target.closest(".suggestions-box");
